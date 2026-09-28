@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Background } from "./components/Background";
 import { ChatInput } from "./components/ChatInput";
@@ -8,6 +10,7 @@ import { InsightsStrip } from "./components/InsightsStrip";
 import { MessageList } from "./components/MessageList";
 import { PricingPage } from "./components/PricingPage";
 import { SettingsDrawer } from "./components/SettingsDrawer";
+import { SecExplorer } from "./components/SecExplorer";
 import { Sidebar } from "./components/Sidebar";
 import { SourcesPanel } from "./components/SourcesPanel";
 import { UpgradeToast } from "./components/UpgradeToast";
@@ -111,7 +114,7 @@ export default function App() {
   }, [messages]);
 
   useEffect(() => {
-    setMode(settings.theme);
+    if (settings.theme !== resolved) patch({ theme: resolved });
   }, []);
 
   useEffect(() => {
@@ -138,18 +141,8 @@ export default function App() {
   return (
     <div className="relative flex min-h-screen flex-col theme-bg">
       <Background />
-      <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
-        {mobileNav && (
-          <button
-            type="button"
-            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-            onClick={() => setMobileNav(false)}
-            aria-label="Close menu overlay"
-          />
-        )}
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <Sidebar
-          view={view}
-          onNavigate={setView}
           conversations={conversations.conversations}
           activeConversationId={conversations.activeId}
           onSelectConversation={handleSelectConversation}
@@ -162,11 +155,17 @@ export default function App() {
         />
         <div className="flex min-h-0 flex-1 flex-col">
           <Header
+            view={view}
+            onNavigate={setView}
             onNewChat={handleNewChat}
             onOpenSettings={() => setSettingsOpen(true)}
             onExport={handleExport}
             canExport={hasMessages}
-            onToggleTheme={toggle}
+            onToggleTheme={() => {
+              const nextTheme = resolved === "dark" ? "light" : "dark";
+              toggle();
+              patch({ theme: nextTheme });
+            }}
             resolvedTheme={resolved}
             onOpenMobileNav={() => setMobileNav(true)}
             planLabel={PLAN_LABELS[settings.plan]}
@@ -220,6 +219,9 @@ export default function App() {
                 conversationsCount={conversations.conversations.length}
                 onAskSample={(q) => goChat(q)}
               />
+            )}
+            {view === "edgar" && (
+              <SecExplorer onAskQuestion={(question) => goChat(question)} />
             )}
           </main>
         </div>

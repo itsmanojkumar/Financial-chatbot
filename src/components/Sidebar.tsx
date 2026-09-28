@@ -1,13 +1,11 @@
 import {
-  BarChart3,
   Bookmark,
-  CreditCard,
   FolderOpen,
   Layers,
-  MessageSquare,
   Trash2,
+  X,
 } from "lucide-react";
-import type { AppView, ConversationSummary, SavedPrompt } from "../types/app";
+import type { ConversationSummary, SavedPrompt } from "../types/app";
 
 const REPORTS = [
   { id: "fy24", label: "Annual Report 2024", active: true },
@@ -16,8 +14,6 @@ const REPORTS = [
 ] as const;
 
 type SidebarProps = {
-  view: AppView;
-  onNavigate: (view: AppView) => void;
   conversations: ConversationSummary[];
   activeConversationId?: string;
   onSelectConversation: (id: string) => void;
@@ -29,16 +25,7 @@ type SidebarProps = {
   onCloseMobile?: () => void;
 };
 
-const navItems: { id: AppView; label: string; icon: typeof MessageSquare }[] =
-  [
-    { id: "chat", label: "Chat", icon: MessageSquare },
-    { id: "insights", label: "Insights", icon: BarChart3 },
-    { id: "pricing", label: "Pricing", icon: CreditCard },
-  ];
-
 export function Sidebar({
-  view,
-  onNavigate,
   conversations,
   activeConversationId,
   onSelectConversation,
@@ -52,30 +39,20 @@ export function Sidebar({
   const panel = (
     <>
       <div className="border-b theme-border px-4 py-4">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider theme-text-muted">
-          <Layers className="h-3.5 w-3.5" />
-          Workspace
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider theme-text-muted">
+            <Layers className="h-3.5 w-3.5" />
+            Workspace
+          </div>
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="rounded-lg p-1.5 theme-text-muted transition hover:theme-list-item"
+            aria-label="Close workspace drawer"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <nav className="mt-3 flex flex-col gap-1 lg:flex-col">
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => {
-                onNavigate(id);
-                onCloseMobile?.();
-              }}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
-                view === id
-                  ? "bg-gold-500/10 text-gold-600 ring-1 ring-gold-500/25 dark:text-gold-400"
-                  : "theme-text-muted hover:theme-list-item hover:theme-text"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
       </div>
 
       <div className="border-b theme-border px-4 py-3">
@@ -179,13 +156,18 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 flex-col border-r theme-border theme-surface/40 lg:flex">
-        {panel}
-      </aside>
       {mobileOpen && (
-        <aside className="fixed inset-y-0 left-0 z-40 flex w-[min(100%,18rem)] flex-col border-r theme-border glass-panel shadow-panel lg:hidden">
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-30 bg-black/35 backdrop-blur-[2px]"
+            onClick={onCloseMobile}
+            aria-label="Close workspace drawer"
+          />
+          <aside className="fixed inset-y-0 left-0 z-40 flex w-[min(100%,20rem)] flex-col border-r theme-border glass-panel shadow-panel">
           {panel}
-        </aside>
+          </aside>
+        </>
       )}
     </>
   );

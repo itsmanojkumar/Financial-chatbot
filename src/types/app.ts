@@ -1,4 +1,4 @@
-export type AppView = "chat" | "pricing" | "insights";
+export type AppView = "chat" | "pricing" | "insights" | "edgar";
 
 export type ThemeMode = "dark" | "light" | "system";
 

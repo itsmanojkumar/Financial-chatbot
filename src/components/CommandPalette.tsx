@@ -30,6 +30,7 @@ export function CommandPalette({
     const base = [
       { id: "new", label: "New conversation", run: onNewChat },
       { id: "chat", label: "Go to Chat", run: () => onNavigate("chat") },
+      { id: "edgar", label: "Open SEC EDGAR Explorer", run: () => onNavigate("edgar") },
       { id: "insights", label: "Go to Insights", run: () => onNavigate("insights") },
       { id: "pricing", label: "Go to Pricing", run: () => onNavigate("pricing") },
       ...prompts.map((p, i) => ({

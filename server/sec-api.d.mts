@@ -1,0 +1,1 @@
+export function handleSecApi(request: Request): Promise<Response | null>;

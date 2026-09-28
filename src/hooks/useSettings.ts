@@ -5,7 +5,7 @@ import type { AppSettings, UserPlan } from "../types/app";
 const STORAGE_KEY = "ledgermind_settings";
 
 const DEFAULT: AppSettings = {
-  theme: "dark",
+  theme: "light",
   compactChat: false,
   showInsightsStrip: true,
   plan: "free",

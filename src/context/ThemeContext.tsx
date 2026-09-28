@@ -10,7 +10,7 @@ import {
 import { loadJson, saveJson } from "../lib/storage";
 import type { ThemeMode } from "../types/app";
 
-const STORAGE_KEY = "ledgermind_theme";
+const STORAGE_KEY = "ledgermind_theme_v2";
 
 type ThemeContextValue = {
   mode: ThemeMode;
@@ -22,7 +22,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function systemTheme(): "dark" | "light" {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
@@ -34,7 +34,7 @@ function resolve(mode: ThemeMode): "dark" | "light" {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() =>
-    loadJson<ThemeMode>(STORAGE_KEY, "dark"),
+    loadJson<ThemeMode>(STORAGE_KEY, "light"),
   );
   const [resolved, setResolved] = useState<"dark" | "light">(() =>
     resolve(mode),

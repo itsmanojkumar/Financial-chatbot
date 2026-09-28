@@ -12,7 +12,7 @@ type ChatInputProps = {
   onSend: (text: string) => void;
   disabled?: boolean;
   placeholder?: string;
-  inputRef?: RefObject<HTMLTextAreaElement>;
+  inputRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
 export function ChatInput({
