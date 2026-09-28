@@ -78,6 +78,13 @@ export default function App() {
     onBeforeSend,
   });
 
+  useEffect(() => {
+    const pendingQuestion = window.sessionStorage.getItem("ledgermind_next_prompt");
+    if (!pendingQuestion) return;
+    window.sessionStorage.removeItem("ledgermind_next_prompt");
+    void sendMessage(pendingQuestion);
+  }, [sendMessage]);
+
   const hasMessages = messages.length > 0;
 
   const goChat = useCallback(

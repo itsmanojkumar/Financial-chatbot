@@ -3,6 +3,7 @@ import {
   BookOpen,
   CreditCard,
   Download,
+  Globe2,
   Landmark,
   Menu,
   Moon,
@@ -102,6 +103,15 @@ export function Header({
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <a
+            href="/"
+            aria-label="Choose a market"
+            title="Choose a market"
+            className="inline-flex items-center gap-1.5 rounded-full px-2 py-2 text-xs font-medium theme-text-muted transition hover:theme-list-item hover:theme-text sm:px-2.5"
+          >
+            <Globe2 className="h-4 w-4" />
+            <span className="hidden xl:inline">Markets</span>
+          </a>
           {canExport && onExport && (
             <button
               type="button"

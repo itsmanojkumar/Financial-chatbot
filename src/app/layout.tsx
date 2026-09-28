@@ -5,7 +5,7 @@ import "../index.css";
 export const metadata: Metadata = {
   title: "LedgerMind — Annual Report Intelligence",
   description:
-    "Explore annual reports and SEC EDGAR filings with company facts, financial trends, and source-backed research.",
+    "Research public-company filings across the United States and India, sourced directly from SEC EDGAR and NSE India.",
   icons: { icon: "/favicon.svg" },
 };
 
