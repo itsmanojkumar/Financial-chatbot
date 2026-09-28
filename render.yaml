@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: financial-chatbot-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_USE_DEMO
+        value: "true"
+      # Set your RAG API URL when backend is live (rebuild required):
+      # - key: VITE_API_BASE_URL
+      #   value: https://your-api.onrender.com

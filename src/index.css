@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  html.dark {
+    --app-bg: #0a0f14;
+    --app-surface: #0f161d;
+    --app-surface-2: #162028;
+    --app-text: #eef2f6;
+    --app-text-muted: #8fa3b8;
+    --app-border: rgba(255, 255, 255, 0.06);
+    --app-glass: rgba(15, 22, 29, 0.72);
+    --app-input: rgba(15, 22, 29, 0.92);
+    --app-list-hover: rgba(255, 255, 255, 0.04);
+    --app-prompt-bg: rgba(22, 32, 40, 0.55);
+    --app-grid-dot: rgba(255, 255, 255, 0.04);
+    --app-kbd-bg: rgba(22, 32, 40, 0.9);
+    --app-footer: rgba(15, 22, 29, 0.82);
+  }
+
+  html.light {
+    --app-bg: #f0f4f9;
+    --app-surface: #ffffff;
+    --app-surface-2: #f8fafc;
+    --app-text: #0f172a;
+    --app-text-muted: #64748b;
+    --app-border: rgba(15, 23, 42, 0.08);
+    --app-glass: rgba(255, 255, 255, 0.88);
+    --app-input: #ffffff;
+    --app-list-hover: rgba(15, 23, 42, 0.04);
+    --app-prompt-bg: #f1f5f9;
+    --app-grid-dot: rgba(15, 23, 42, 0.06);
+    --app-kbd-bg: #e2e8f0;
+    --app-footer: rgba(255, 255, 255, 0.92);
+  }
+
+  body {
+    background-color: var(--app-bg);
+    color: var(--app-text);
+    @apply font-sans min-h-screen;
+  }
+
+  ::selection {
+    @apply bg-gold-500/30;
+  }
+}
+
+@layer utilities {
+  .theme-text {
+    color: var(--app-text);
+  }
+
+  .theme-text-muted {
+    color: var(--app-text-muted);
+  }
+
+  .theme-border {
+    border-color: var(--app-border);
+  }
+
+  .theme-bg {
+    background-color: var(--app-bg);
+  }
+
+  .theme-surface {
+    background-color: var(--app-surface);
+  }
+
+  .theme-surface-2 {
+    background-color: var(--app-surface-2);
+  }
+
+  .theme-input-bg {
+    background-color: var(--app-input);
+  }
+
+  .theme-footer-bg {
+    background-color: var(--app-footer);
+  }
+
+  .theme-list-item {
+    background-color: var(--app-list-hover);
+  }
+
+  .theme-prompt-btn {
+    background-color: var(--app-prompt-bg);
+    color: var(--app-text-muted);
+    border: 1px solid var(--app-border);
+  }
+
+  .theme-prompt-btn:hover {
+    color: var(--app-text);
+    border-color: rgba(212, 175, 90, 0.35);
+  }
+
+  .theme-btn-secondary {
+    background-color: var(--app-list-hover);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+  }
+
+  .theme-btn-secondary:hover {
+    border-color: rgba(212, 175, 90, 0.3);
+  }
+
+  .theme-kbd {
+    @apply rounded px-1.5 py-0.5 text-xs font-medium;
+    background: var(--app-kbd-bg);
+    color: var(--app-text-muted);
+  }
+
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 bg-clip-text text-transparent;
+  }
+
+  html.dark .text-gradient-gold {
+    @apply from-gold-400 via-mist-100 to-gold-500;
+  }
+
+  .glass-panel {
+    background: var(--app-glass);
+    @apply backdrop-blur-xl border;
+    border-color: var(--app-border);
+  }
+
+  .prose-theme {
+    @apply prose prose-sm max-w-none prose-p:my-2 prose-headings:font-display prose-a:text-teal-600;
+  }
+
+  html.dark .prose-theme {
+    @apply prose-invert prose-headings:text-mist-100 prose-strong:text-mist-100 prose-a:text-teal-400;
+  }
+
+  html.light .prose-theme {
+    @apply prose-slate prose-headings:text-slate-900;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(143, 163, 184, 0.35) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(143, 163, 184, 0.35);
+    border-radius: 999px;
+  }
+}
