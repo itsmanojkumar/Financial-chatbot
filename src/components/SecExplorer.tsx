@@ -358,6 +358,11 @@ export function SecExplorer({
                       {company.tickers.map((ticker) => (
                         <span key={ticker} className="rounded-md bg-gold-500/15 px-2 py-1 text-xs font-semibold text-gold-700 dark:text-gold-300">{ticker}</span>
                       ))}
+                      {company.tickers.includes("NVDA") && (
+                        <span className="rounded-full bg-teal-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-300">
+                          Annual report ready
+                        </span>
+                      )}
                     </div>
                     <p className="mt-1 text-sm theme-text-muted">
                       {company.exchanges.join(", ") || selected?.exchange || "US registrant"}
@@ -369,10 +374,13 @@ export function SecExplorer({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => onAskQuestion(`Summarize ${company.name}'s latest annual report. Cover revenue, net income, operating cash flow, balance sheet trends, and key risks.`)}
+                    onClick={() => onAskQuestion(company.tickers.includes("NVDA")
+                      ? "Use the available NVIDIA annual report to summarize revenue, net income, operating cash flow, balance sheet trends, and key risks. Cite the report pages."
+                      : `Summarize ${company.name}'s latest annual report. Cover revenue, net income, operating cash flow, balance sheet trends, and key risks.`)}
                     className="inline-flex items-center gap-2 rounded-xl bg-teal-500/10 px-3.5 py-2.5 text-sm font-medium text-teal-700 transition hover:bg-teal-500/15 dark:text-teal-300"
                   >
-                    <Sparkles className="h-4 w-4" /> Ask about this company
+                    <Sparkles className="h-4 w-4" />
+                    {company.tickers.includes("NVDA") ? "Ask about NVIDIA report" : "Ask about this company"}
                   </button>
                   <a
                     href={`https://www.sec.gov/edgar/browse/?CIK=${company.cik}&owner=exclude`}

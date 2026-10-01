@@ -1,7 +1,11 @@
 import type { ChatRequest, ChatResponse } from "../types/chat";
 
-const API_BASE = process.env.NEXT_PUBLIC_RAG_API_BASE_URL ?? "";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  process.env.NEXT_PUBLIC_RAG_API_BASE_URL ??
+  "";
 const USE_DEMO =
+  !API_BASE &&
   process.env.NEXT_PUBLIC_USE_DEMO !== "false" &&
   process.env.NEXT_PUBLIC_USE_DEMO !== "0";
 
