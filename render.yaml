@@ -2,7 +2,7 @@ services:
   - type: web
     name: financial-chatbot-frontend
     runtime: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_USE_DEMO
@@ -10,4 +10,4 @@ services:
       - key: SEC_USER_AGENT
         sync: false
       - key: RAG_API_BASE_URL
-        sync: false
+        value: https://financial-chatbot-977857299843.asia-south1.run.app

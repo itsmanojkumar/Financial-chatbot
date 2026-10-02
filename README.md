@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the global market selector. Choose [United States](http://localhost:3000/us) for SEC EDGAR, [India](http://localhost:3000/india) for NSE India, or [Workspace](http://localhost:3000/workspace) for chat. Demo mode is on by default so you can try the UI without a RAG backend.
+Open [http://localhost:3000](http://localhost:3000) for the global market selector. Choose [United States](http://localhost:3000/us) for SEC EDGAR, [India](http://localhost:3000/india) for NSE India, or [Workspace](http://localhost:3000/workspace) for chat. Chat uses the RAG backend by default; set `NEXT_PUBLIC_USE_DEMO=true` to use placeholder answers instead.
 
 Production build and server:
 
@@ -40,13 +40,13 @@ The Next.js `/api/nse/*` routes access NSE data server-side, cache the company m
 2. On [Render](https://dashboard.render.com/static/new), connect the repo.
 3. The included Blueprint builds and runs the Next.js Node web service (`npm start`) to serve the site and SEC API route handlers.
 4. Set the required `SEC_USER_AGENT` environment variable in Render to your application name and monitored contact email.
-5. Set `NEXT_PUBLIC_USE_DEMO=true` for demo chat. For live chat, set `RAG_API_BASE_URL` on the server to your RAG API URL. The browser should normally call the same-origin `/api/chat` route so CORS is avoided; only enable direct browser access if your upstream service explicitly supports CORS.
+5. Keep `NEXT_PUBLIC_USE_DEMO=false` and set `RAG_API_BASE_URL` to your RAG API URL in Render. The Blueprint prompts for this value because it is deployment-specific. The browser calls the same-origin `/api/chat` route so CORS is avoided; only enable direct browser access if your upstream service explicitly supports CORS.
 
 Use the included `render.yaml` blueprint when creating a Blueprint from the repo; the SEC route handlers require the Node web service rather than a static-only site.
 
 ## Connect your RAG backend
 
-1. Copy `.env.example` to `.env` and set `NEXT_PUBLIC_USE_DEMO=false`.
+1. Copy `.env.example` to `.env` and set `RAG_API_BASE_URL` to your backend URL. Demo mode is disabled by default.
 2. Run your API on **port 8000** or set `RAG_API_BASE_URL` to your API URL.
 
 ### Expected API
