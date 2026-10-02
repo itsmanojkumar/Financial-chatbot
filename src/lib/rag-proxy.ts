@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 const RAG_API_BASE =
   process.env.RAG_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_RAG_API_BASE_URL ||
   (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "");
 
