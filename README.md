@@ -26,9 +26,9 @@ EDGAR data is requested by the server, not directly by the browser: `data.sec.go
 
 ## India market explorer
 
-The India workspace is based on official NSE India sources: the [equity master CSV](https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv) for listed symbols, company names, trading series, listing dates, ISIN and face value; and the [NSE corporate-announcements RSS feed](https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml) for issuer-submitted disclosures and attachment links. NSE's official [financial-results](https://www.nseindia.com/companies-listing/corporate-filings-financial-results), [annual-reports](https://www.nseindia.com/companies-listing/corporate-filings-annual-reports) and [shareholding-pattern](https://www.nseindia.com/companies-listing/corporate-filings-shareholding-pattern) archives are linked from each company profile. NSE listings/disclosures do not supply the same standardized company-facts API as SEC XBRL; for India, financial filings remain linked to the original exchange source instead of being presented as comparable API facts.
+The India workspace is sourced from official NSE company, index, board-calendar, announcement and annual-report feeds. All data retrieval and PDF delivery run through server-side LedgerMind routes; the company UI does not send the user away to NSE pages. PDFs present in the latest annual-report feed are streamed into the in-app reader/download. If a report is not available for a symbol in that feed, it is marked pending rather than redirecting elsewhere. Other announcement, financial-results and shareholding readers are marked in progress. NSE listings/disclosures do not supply the same standardized company-facts API as SEC XBRL; India filings are shown as issuer-provided documents instead of being presented as comparable API facts.
 
-The India market monitor reads NSE's [live index feed](https://www.nseindia.com/market-data/live-market-indices) and [board-meeting calendar](https://www.nseindia.com/companies-listing/corporate-filings-event-calendar). The upcoming-results panel only includes future calendar entries whose purpose or agenda states financial results; a board meeting is a scheduled consideration date, not a guarantee that results will be released that day.
+The India market monitor reads NSE live-index and board-meeting feeds through the LedgerMind server. The upcoming-results panel only includes future calendar entries whose purpose or agenda states financial results; a board meeting is a scheduled consideration date, not a guarantee that results will be released that day.
 
 The U.S. market panel includes S&P 500, Nasdaq Composite, Dow Jones Industrial Average and Russell 2000 quote snapshots via Yahoo Finance, refreshed about once a minute and labeled with the upstream quote timestamp. This is **not** licensed real-time exchange data; the SEC EDGAR service does not publish a centralized upcoming earnings calendar, so no U.S. result dates are inferred or invented. Use the linked index and company filing sources to confirm values and schedules.
 
@@ -40,7 +40,7 @@ The Next.js `/api/nse/*` routes access NSE data server-side, cache the company m
 2. On [Render](https://dashboard.render.com/static/new), connect the repo.
 3. The included Blueprint builds and runs the Next.js Node web service (`npm start`) to serve the site and SEC API route handlers.
 4. Set the required `SEC_USER_AGENT` environment variable in Render to your application name and monitored contact email.
-5. Set `NEXT_PUBLIC_USE_DEMO=true` for demo chat. For live chat, set `RAG_API_BASE_URL` on the server to your RAG API URL; `NEXT_PUBLIC_RAG_API_BASE_URL` is available when the browser should contact the API directly.
+5. Set `NEXT_PUBLIC_USE_DEMO=true` for demo chat. For live chat, set `RAG_API_BASE_URL` on the server to your RAG API URL. The browser should normally call the same-origin `/api/chat` route so CORS is avoided; only enable direct browser access if your upstream service explicitly supports CORS.
 
 Use the included `render.yaml` blueprint when creating a Blueprint from the repo; the SEC route handlers require the Node web service rather than a static-only site.
 
@@ -83,7 +83,7 @@ Response:
 
 Optional streaming: **POST** `/api/chat/stream` — newline-delimited JSON with `{ "token": "…" }` or `{ "delta": "…" }`. If streaming fails, the client falls back to `/api/chat`.
 
-The same-origin Next.js `/api/chat` and `/api/chat/stream` routes proxy requests to `RAG_API_BASE_URL` (default: `http://localhost:8000`).
+The same-origin Next.js `/api/chat` and `/api/chat/stream` routes proxy requests to `RAG_API_BASE_URL` (default: `http://localhost:8000`). Leave `NEXT_PUBLIC_ALLOW_DIRECT_CHAT_API` unset or `false` unless you intentionally want the browser to call the upstream RAG service directly.
 
 ## Stack
 

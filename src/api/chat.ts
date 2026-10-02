@@ -1,9 +1,12 @@
 import type { ChatRequest, ChatResponse } from "../types/chat";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.NEXT_PUBLIC_RAG_API_BASE_URL ??
-  "";
+const ALLOW_DIRECT_CHAT_API =
+  process.env.NEXT_PUBLIC_ALLOW_DIRECT_CHAT_API === "true";
+const API_BASE = ALLOW_DIRECT_CHAT_API
+  ? (process.env.NEXT_PUBLIC_API_URL ??
+      process.env.NEXT_PUBLIC_RAG_API_BASE_URL ??
+      "")
+  : "";
 const USE_DEMO =
   !API_BASE &&
   process.env.NEXT_PUBLIC_USE_DEMO !== "false" &&
@@ -12,7 +15,7 @@ const USE_DEMO =
 function demoReply(message: string): ChatResponse {
   const lower = message.toLowerCase();
   let reply =
-    "I searched your indexed annual reports. Connect your RAG backend at `/api/chat` (or set `NEXT_PUBLIC_RAG_API_BASE_URL`) to get live answers with citations.";
+    "I searched your indexed annual reports. Connect your RAG backend with `RAG_API_BASE_URL` on the server, or enable direct browser access only if your upstream service supports CORS.";
 
   if (lower.includes("revenue") || lower.includes("sales")) {
     reply =
@@ -56,7 +59,7 @@ export async function sendChatMessage(
     return demoReply(payload.message);
   }
 
-  const url = `${API_BASE}/api/chat`.replace(/([^:]\/)\/+/g, "$1");
+  const url = API_BASE ? new URL("/api/chat", API_BASE).toString() : "/api/chat";
 
   const res = await fetch(url, {
     method: "POST",
@@ -89,15 +92,19 @@ export async function streamChatMessage(
   if (USE_DEMO) {
     const full = demoReply(payload.message);
     const words = full.reply.split(/(\s+)/);
+    let streamedReply = "";
     for (const w of words) {
       if (signal?.aborted) break;
+      streamedReply += w;
       onToken(w);
       await new Promise((r) => setTimeout(r, 18));
     }
-    return full;
+    return { ...full, reply: streamedReply };
   }
 
-  const url = `${API_BASE}/api/chat/stream`.replace(/([^:]\/)\/+/g, "$1");
+  const url = API_BASE
+    ? new URL("/api/chat/stream", API_BASE).toString()
+    : "/api/chat/stream";
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -117,33 +124,95 @@ export async function streamChatMessage(
   const decoder = new TextDecoder();
   let buffer = "";
   let fullText = "";
+  let responseConversationId = payload.conversationId;
+  let sources: ChatResponse["sources"];
+  const contentType = res.headers.get("content-type")?.toLowerCase() ?? "";
+  const isEventStream = contentType.includes("text/event-stream");
+  const isJsonLines =
+    contentType.includes("ndjson") || contentType.includes("jsonl");
+
+  const consumeData = (data: string) => {
+    if (!data || data === "[DONE]") return;
+    try {
+      const parsed = JSON.parse(data) as {
+        token?: string;
+        delta?: string;
+        reply?: string;
+        answer?: string;
+        conversationId?: string;
+        sources?: ChatResponse["sources"];
+      };
+      const chunk = parsed.token ?? parsed.delta ?? parsed.reply ?? parsed.answer;
+      if (chunk) {
+        fullText += chunk;
+        onToken(chunk);
+      }
+      responseConversationId = parsed.conversationId ?? responseConversationId;
+      sources = parsed.sources ?? sources;
+    } catch {
+      fullText += data;
+      onToken(data);
+    }
+  };
+
+  const consumeEvent = (event: string) => {
+    const data = event
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart())
+      .join("\n");
+    consumeData(data);
+  };
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const parsed = JSON.parse(line) as {
-          token?: string;
-          delta?: string;
-          done?: boolean;
-          sources?: ChatResponse["sources"];
-        };
-        const chunk = parsed.token ?? parsed.delta ?? "";
-        if (chunk) {
-          fullText += chunk;
-          onToken(chunk);
-        }
-      } catch {
-        fullText += line;
-        onToken(line);
+    if (done) {
+      buffer += decoder.decode();
+      break;
+    }
+
+    const decoded = decoder.decode(value, { stream: true });
+    if (!isEventStream && !isJsonLines && !contentType.includes("application/json")) {
+      fullText += decoded;
+      onToken(decoded);
+      continue;
+    }
+
+    buffer += decoded;
+    if (isEventStream) {
+      const events = buffer.split(/\r?\n\r?\n/);
+      buffer = events.pop() ?? "";
+      for (const event of events) consumeEvent(event);
+    } else {
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.trim()) consumeData(line);
       }
     }
   }
 
-  return { reply: fullText, conversationId: payload.conversationId };
+  if (buffer.trim()) {
+    if (isEventStream) {
+      consumeEvent(buffer);
+    } else if (isJsonLines) {
+      consumeData(buffer);
+    } else {
+      try {
+        const parsed = JSON.parse(buffer) as ChatResponse & { answer?: string };
+        fullText = parsed.reply ?? parsed.answer ?? fullText;
+        responseConversationId = parsed.conversationId ?? responseConversationId;
+        sources = parsed.sources ?? sources;
+      } catch {
+        fullText += buffer;
+        onToken(buffer);
+      }
+    }
+  }
+
+  return {
+    reply: fullText,
+    conversationId: responseConversationId,
+    sources,
+  };
 }

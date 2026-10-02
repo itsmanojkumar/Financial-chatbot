@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowUp, Loader2, Mic } from "lucide-react";
+import { ArrowUp, Mic, Square } from "lucide-react";
 import {
   useCallback,
   useRef,
@@ -10,6 +10,7 @@ import {
 
 type ChatInputProps = {
   onSend: (text: string) => void;
+  onStop: () => void;
   disabled?: boolean;
   placeholder?: string;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
@@ -17,6 +18,7 @@ type ChatInputProps = {
 
 export function ChatInput({
   onSend,
+  onStop,
   disabled,
   placeholder = "Ask about revenue, risks, cash flow, governance…",
   inputRef: externalRef,
@@ -77,13 +79,14 @@ export function ChatInput({
           </button>
           <button
             type="button"
-            onClick={submit}
-            disabled={disabled || !value.trim()}
-            aria-label="Send message"
+            onClick={disabled ? onStop : submit}
+            disabled={!disabled && !value.trim()}
+            aria-label={disabled ? "Stop generating" : "Send message"}
+            title={disabled ? "Stop generating" : "Send message"}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 text-ink-950 transition hover:from-gold-400 hover:to-gold-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {disabled ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Square className="h-4 w-4" fill="currentColor" />
             ) : (
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} />
             )}

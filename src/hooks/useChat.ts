@@ -120,12 +120,30 @@ export function useChat(options: UseChatOptions = {}) {
           ),
         );
       } finally {
-        setIsLoading(false);
-        abortRef.current = null;
+        if (abortRef.current === controller) {
+          setIsLoading(false);
+          abortRef.current = null;
+        }
       }
     },
     [conversationId, isLoading, messages, onAfterReply, onBeforeSend],
   );
+
+  const stopGenerating = useCallback(() => {
+    const controller = abortRef.current;
+    if (!controller) return;
+
+    controller.abort();
+    abortRef.current = null;
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.status === "streaming"
+          ? { ...message, status: "done" }
+          : message,
+      ),
+    );
+    setIsLoading(false);
+  }, []);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort();
@@ -156,6 +174,7 @@ export function useChat(options: UseChatOptions = {}) {
     messages,
     isLoading,
     sendMessage,
+    stopGenerating,
     clearChat,
     loadSession,
     suggestedPrompts: SUGGESTED_PROMPTS,

@@ -66,6 +66,7 @@ export default function App() {
     messages,
     isLoading,
     sendMessage,
+    stopGenerating,
     clearChat,
     loadSession,
     suggestedPrompts,
@@ -206,6 +207,7 @@ export default function App() {
                 )}
                 <ChatInput
                   onSend={sendMessage}
+                  onStop={stopGenerating}
                   disabled={isLoading}
                   inputRef={inputRef}
                 />

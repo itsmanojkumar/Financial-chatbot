@@ -11,7 +11,6 @@ export type NseCompanyMatch = {
 
 export type NseAnnouncement = {
   companyName: string;
-  url: string;
   description: string;
   publishedAt: string;
 };
@@ -24,10 +23,14 @@ export function searchNseCompanies(query: string): Promise<{
 export function getNseCompany(symbol: string): Promise<
   NseCompanyMatch & {
     filings: NseAnnouncement[];
-    announcementsPage: string;
-    annualReportsPage: string;
-    financialResultsPage: string;
-    shareholdingPage: string;
+    annualReports: Array<{
+      id: string;
+      companyName: string;
+      description: string;
+      publishedAt: string;
+      year: string;
+    }>;
+    annualReportsError?: string;
     directoryCount: number;
     sourceUpdatedAt: string;
   }
@@ -59,12 +62,15 @@ export function getNseMarketOverview(): Promise<{
     purpose: string;
     description: string;
     date: string;
-    sourceUrl: string;
   }>;
   retrievedAt: string;
   exchange: string;
-  indicesSource: string;
-  calendarSource: string;
   indicesError?: string;
   calendarError?: string;
 }>;
+
+export function streamNseAnnualReport(
+  symbol: string,
+  reportId: string,
+  rangeHeader?: string | null,
+): Promise<Response>;

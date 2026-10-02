@@ -1,7 +1,11 @@
+import { createHash } from "node:crypto";
+
 const NSE_COMPANY_LIST_URL =
   "https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv";
 const NSE_ANNOUNCEMENTS_URL =
   "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml";
+const NSE_ANNUAL_REPORTS_URL =
+  "https://nsearchives.nseindia.com/content/RSS/Annual_Reports.xml";
 const ANNOUNCEMENTS_PAGE =
   "https://www.nseindia.com/companies-listing/corporate-filings-announcements";
 const NSE_INDICES_API = "https://www.nseindia.com/api/allIndices";
@@ -132,7 +136,6 @@ export async function getNseMarketOverview() {
       purpose: String(event.purpose ?? "Financial Results"),
       description: String(event.bm_desc ?? ""),
       date: String(event.date ?? ""),
-      sourceUrl: `https://www.nseindia.com/companies-listing/corporate-filings-event-calendar?symbol=${encodeURIComponent(event.symbol ?? "")}`,
     }))
     .sort((a, b) => {
       const first = parseNseDate(a.date)?.valueOf() ?? 0;
@@ -146,8 +149,6 @@ export async function getNseMarketOverview() {
     upcomingResults,
     retrievedAt: now.toISOString(),
     exchange: "National Stock Exchange of India",
-    indicesSource: NSE_INDICES_API,
-    calendarSource: NSE_EVENTS_API,
     indicesError: indicesResult.status === "rejected" ? String(indicesResult.reason?.message ?? "Index feed unavailable") : undefined,
     calendarError: eventsResult.status === "rejected" ? String(eventsResult.reason?.message ?? "Event calendar unavailable") : undefined,
   };
@@ -249,6 +250,43 @@ async function getAnnouncements() {
   });
 }
 
+async function getAnnualReports() {
+  const xml = await fetchText(
+    NSE_ANNUAL_REPORTS_URL,
+    "nse-annual-reports-rss",
+    5 * 60 * 1000,
+  );
+  return [...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)]
+    .map((match) => {
+      const item = match[1];
+      const rawUrl = xmlValue(item, "link");
+      let documentUrl = "";
+      try {
+        const parsed = new URL(rawUrl);
+        if (
+          parsed.protocol === "https:" &&
+          parsed.hostname === "nsearchives.nseindia.com" &&
+          parsed.pathname.startsWith("/annual_reports/") &&
+          parsed.pathname.toLowerCase().endsWith(".pdf")
+        ) {
+          documentUrl = parsed.toString();
+        }
+      } catch {
+        // Ignore malformed report links from the upstream feed.
+      }
+      const yearMatch = documentUrl.match(/_(\d{4}_\d{4})_/);
+      return {
+        companyName: xmlValue(item, "title"),
+        url: documentUrl,
+        id: createHash("sha256").update(documentUrl).digest("hex"),
+        description: xmlValue(item, "description"),
+        publishedAt: xmlValue(item, "pubDate"),
+        year: yearMatch?.[1]?.replace("_", "–") ?? "Annual report",
+      };
+    })
+    .filter((report) => report.companyName && report.url);
+}
+
 function companyKey(value) {
   return value
     .toLowerCase()
@@ -293,23 +331,103 @@ export async function getNseCompany(symbol) {
     throw error;
   }
 
-  const announcements = await getAnnouncements();
+  const [announcementResult, annualReportResult] = await Promise.allSettled([
+    getAnnouncements(),
+    getAnnualReports(),
+  ]);
   const key = companyKey(company.name);
-  const filings = announcements
+  const announcements = announcementResult.status === "fulfilled" ? announcementResult.value : [];
+  const annualReports = annualReportResult.status === "fulfilled" ? annualReportResult.value : [];
+  const matchesCompany = (item) => {
+    const itemKey = companyKey(item.companyName);
+    return itemKey === key || (key.length > 7 && itemKey.includes(key)) || (itemKey.length > 7 && key.includes(itemKey));
+  };
+  const filingsWithUrls = announcements
     .filter((item) => {
-      const itemKey = companyKey(item.companyName);
-      return itemKey === key || itemKey.includes(key) || key.includes(itemKey);
+      return matchesCompany(item);
     })
     .slice(0, 12);
+  const filings = filingsWithUrls.map(({ url, ...filing }) => filing);
+  const reports = annualReports
+    .filter(matchesCompany)
+    .slice(0, 12)
+    .map(({ url, ...report }) => report);
 
   return {
     ...company,
     filings,
-    announcementsPage: ANNOUNCEMENTS_PAGE,
-    annualReportsPage: "https://www.nseindia.com/companies-listing/corporate-filings-annual-reports",
-    financialResultsPage: `https://www.nseindia.com/companies-listing/corporate-filings-financial-results?symbol=${encodeURIComponent(normalized)}`,
-    shareholdingPage: `https://www.nseindia.com/companies-listing/corporate-filings-shareholding-pattern?symbol=${encodeURIComponent(normalized)}`,
+    annualReports: reports,
+    annualReportsError: annualReportResult.status === "rejected" ? String(annualReportResult.reason?.message ?? "NSE annual report feed unavailable") : undefined,
     directoryCount: directory.length,
     sourceUpdatedAt: new Date().toISOString(),
   };
+}
+
+export async function streamNseAnnualReport(symbol, reportId, rangeHeader) {
+  const normalized = String(symbol ?? "").trim().toUpperCase();
+  if (!/^[A-Z0-9._&-]{1,30}$/.test(normalized)) {
+    const error = new Error("Enter a valid NSE symbol.");
+    error.status = 400;
+    throw error;
+  }
+
+  const directory = await getListedCompanies();
+  const company = directory.find((item) => item.symbol === normalized);
+  if (!company) {
+    const error = new Error("NSE symbol not found.");
+    error.status = 404;
+    throw error;
+  }
+  const key = companyKey(company.name);
+  const reports = await getAnnualReports();
+  const report = reports.find((item) => {
+    if (item.id !== reportId) return false;
+    const reportKey = companyKey(item.companyName);
+    return reportKey === key || (key.length > 7 && reportKey.includes(key)) || (reportKey.length > 7 && key.includes(reportKey));
+  });
+  if (!report) {
+    const error = new Error("This report is not in the latest official NSE annual-report feed for the selected company.");
+    error.status = 404;
+    throw error;
+  }
+
+  const headers = {
+    Accept: "application/pdf,*/*",
+    Referer: "https://www.nseindia.com/companies-listing/corporate-filings-annual-reports",
+    "User-Agent": "Mozilla/5.0 (compatible; LedgerMind/1.0; official report reader)",
+  };
+  if (typeof rangeHeader === "string" && /^bytes=(?:\d+-\d*|-\d+)$/.test(rangeHeader)) {
+    headers.Range = rangeHeader;
+  }
+  const upstream = await fetch(report.url, {
+    headers,
+    signal: AbortSignal.timeout(45_000),
+  });
+  if (!upstream.ok && upstream.status !== 206) {
+    const error = new Error(`NSE report download returned ${upstream.status}.`);
+    error.status = 502;
+    throw error;
+  }
+  const contentType = upstream.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("pdf")) {
+    const error = new Error("NSE did not return a PDF document for this report.");
+    error.status = 502;
+    throw error;
+  }
+
+  const responseHeaders = new Headers({
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${normalized}-${report.year.replace("–", "-")}-annual-report.pdf"`,
+    "Cache-Control": "private, max-age=3600",
+    "X-Content-Type-Options": "nosniff",
+    "Accept-Ranges": upstream.headers.get("accept-ranges") ?? "bytes",
+  });
+  for (const name of ["content-length", "content-range"]) {
+    const value = upstream.headers.get(name);
+    if (value) responseHeaders.set(name, value);
+  }
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: responseHeaders,
+  });
 }

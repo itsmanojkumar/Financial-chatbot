@@ -11,17 +11,20 @@ export type NseCompanyMatch = {
 
 export type NseAnnouncement = {
   companyName: string;
-  url: string;
   description: string;
   publishedAt: string;
 };
 
 export type NseCompany = NseCompanyMatch & {
   filings: NseAnnouncement[];
-  announcementsPage: string;
-  annualReportsPage: string;
-  financialResultsPage: string;
-  shareholdingPage: string;
+  annualReports: Array<{
+    id: string;
+    companyName: string;
+    description: string;
+    publishedAt: string;
+    year: string;
+  }>;
+  annualReportsError?: string;
   directoryCount: number;
   sourceUpdatedAt: string;
 };

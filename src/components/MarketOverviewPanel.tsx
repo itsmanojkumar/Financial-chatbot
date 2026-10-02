@@ -40,7 +40,6 @@ type ResultsEvent = {
   purpose: string;
   description: string;
   date: string;
-  sourceUrl: string;
 };
 
 type IndiaOverview = {
@@ -130,18 +129,18 @@ function UpcomingResults({ events, loading, error }: { events: ResultsEvent[]; l
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><CalendarDays className="h-4 w-4" /></span>
           <div><h3 className="text-sm font-semibold text-slate-950">Upcoming company results</h3><p className="mt-0.5 text-[10px] text-slate-500">Future NSE board meetings whose published agenda mentions financial results</p></div>
         </div>
-        <a href="https://www.nseindia.com/companies-listing/corporate-filings-event-calendar" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-teal-800">Official NSE calendar <ArrowUpRightFromSquare className="h-3.5 w-3.5" /></a>
+        <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-teal-800">Exchange feed · in workspace</span>
       </div>
       {loading ? (
         <div className="space-y-3 px-4 py-5 sm:px-5">{[1, 2, 3].map((item) => <div key={item} className="flex gap-3"><span className="h-8 w-[68px] animate-pulse rounded-lg bg-slate-100" /><span className="flex-1"><span className="block h-3 w-2/5 animate-pulse rounded bg-slate-100" /><span className="mt-2 block h-3 w-4/5 animate-pulse rounded bg-slate-100" /></span></div>)}</div>
       ) : events.length > 0 ? (
         <div className="max-h-[440px] divide-y divide-slate-100 overflow-y-auto">
           {events.map((event, index) => (
-            <a key={`${event.symbol}-${event.date}-${index}`} href={event.sourceUrl} target="_blank" rel="noreferrer" className="group flex items-start gap-3 px-4 py-3.5 transition hover:bg-slate-50 sm:px-5">
+            <div key={`${event.symbol}-${event.date}-${index}`} className="flex items-start gap-3 px-4 py-3.5 sm:px-5">
               <span className="min-w-[68px] rounded-lg bg-slate-100 px-2 py-1.5 text-center text-[10px] font-semibold text-slate-700">{formatResultDate(event.date)}</span>
               <span className="min-w-0 flex-1"><span className="flex flex-wrap items-baseline gap-x-2 gap-y-1"><span className="text-xs font-semibold text-slate-900">{event.company}</span><span className="text-[9px] font-bold tracking-wide text-teal-800">{event.symbol}</span></span><span className="mt-1 block text-[10px] leading-relaxed text-slate-500">{event.description}</span></span>
-              <ArrowUpRightFromSquare className="mt-1 h-3.5 w-3.5 shrink-0 text-slate-400 transition group-hover:text-teal-700" />
-            </a>
+              <span className="mt-1 shrink-0 rounded-full bg-amber-50 px-2 py-1 text-[8px] font-semibold uppercase tracking-wide text-amber-800">Details in progress</span>
+            </div>
           ))}
         </div>
       ) : (
@@ -203,7 +202,7 @@ export function MarketOverviewPanel({ market }: { market: "india" | "us" }) {
         ) : indices.length > 0 ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{indices.map((index) => <IndexCard key={index.symbol} index={index} india={isIndia} retrievedAt={retrievedAt} />)}</div>
         ) : (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-xs text-amber-900"><span className="font-semibold">Quotes are temporarily unavailable.</span> {error || (isIndia ? indiaData?.indicesError : undefined) || "No values returned by the upstream feed."} <a href={isIndia ? "https://www.nseindia.com/market-data/live-market-indices" : "https://www.nasdaq.com/market-activity/indexes"} target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-1 font-semibold underline">Open official market page <ArrowUpRightFromSquare className="h-3 w-3" /></a></div>
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-xs text-amber-900"><span className="font-semibold">Quotes are temporarily unavailable.</span> {error || (isIndia ? indiaData?.indicesError : undefined) || "No values returned by the upstream feed."}{isIndia && <span className="ml-1 font-medium">We’ll retry automatically.</span>}{!isIndia && <a href="https://www.nasdaq.com/market-activity/indexes" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-1 font-semibold underline">Open US index listings <ArrowUpRightFromSquare className="h-3 w-3" /></a>}</div>
         )}
 
         {!isIndia && usData?.note && <p className="mt-2 text-[9px] leading-relaxed text-slate-400">{usData.note} <a href="https://finance.yahoo.com/markets/indices/" target="_blank" rel="noreferrer" className="font-medium text-slate-500 underline underline-offset-2">Quote source</a>; compare against <a href="https://www.nasdaq.com/market-activity/indexes" target="_blank" rel="noreferrer" className="font-medium text-slate-500 underline underline-offset-2">Nasdaq index listings</a>.</p>}
