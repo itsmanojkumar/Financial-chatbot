@@ -8,9 +8,8 @@ const API_BASE = ALLOW_DIRECT_CHAT_API
       "")
   : "";
 const USE_DEMO =
-  !API_BASE &&
-  process.env.NEXT_PUBLIC_USE_DEMO !== "false" &&
-  process.env.NEXT_PUBLIC_USE_DEMO !== "0";
+  process.env.NEXT_PUBLIC_USE_DEMO === "true" ||
+  process.env.NEXT_PUBLIC_USE_DEMO === "1";
 
 function demoReply(message: string): ChatResponse {
   const lower = message.toLowerCase();

@@ -6,9 +6,8 @@ services:
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_USE_DEMO
-        value: "true"
+        value: "false"
       - key: SEC_USER_AGENT
         sync: false
-      # Set your RAG API URL when the backend is live:
-      # - key: RAG_API_BASE_URL
-      #   value: https://your-api.onrender.com
+      - key: RAG_API_BASE_URL
+        sync: false
