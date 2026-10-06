@@ -5,6 +5,8 @@ import {
   Download,
   Globe2,
   Landmark,
+  LogIn,
+  LogOut,
   Menu,
   Moon,
   MessageSquare,
@@ -25,6 +27,10 @@ type HeaderProps = {
   resolvedTheme: "dark" | "light";
   onOpenMobileNav: () => void;
   planLabel: string;
+  user?: { name?: string | null; email?: string | null } | null;
+  authLoading: boolean;
+  onSignIn: () => void;
+  onSignOut: () => void;
 };
 
 const NAV_ITEMS = [
@@ -45,6 +51,10 @@ export function Header({
   resolvedTheme,
   onOpenMobileNav,
   planLabel,
+  user,
+  authLoading,
+  onSignIn,
+  onSignOut,
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 shrink-0 border-b theme-border bg-white/85 px-3 py-3 shadow-sm backdrop-blur-2xl dark:bg-ink-950/85 md:px-5">
@@ -144,6 +154,40 @@ export function Header({
           >
             <Settings className="h-4 w-4" />
           </button>
+          {!authLoading && (user ? (
+            <div
+              className="inline-flex items-center gap-1 rounded-full border theme-border py-1 pl-1 pr-1"
+              title={user.email ? `Signed in as ${user.email}` : undefined}
+            >
+              <span
+                className="grid h-7 w-7 place-items-center rounded-full bg-teal-600 text-xs font-semibold text-white"
+                aria-hidden="true"
+              >
+                {(user.name || user.email || "?").trim().charAt(0).toUpperCase()}
+              </span>
+              <span className="hidden max-w-[9rem] truncate pl-1 text-xs font-medium theme-text lg:inline">
+                {user.name || user.email}
+              </span>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="inline-flex items-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-medium theme-text-muted transition hover:theme-list-item hover:theme-text"
+                aria-label={`Sign out${user.email ? ` ${user.email}` : ""}`}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="inline-flex items-center gap-1.5 rounded-full border theme-border px-2.5 py-2 text-xs font-medium theme-text transition hover:theme-list-item sm:px-3"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign in</span>
+            </button>
+          ))}
           <button
             type="button"
             onClick={onNewChat}

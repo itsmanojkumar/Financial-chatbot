@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { streamChatMessage } from "../api/chat";
+import { ChatRequestError, streamChatMessage } from "../api/chat";
 import { createId } from "../lib/id";
 import type { ChatMessage, SourceCitation } from "../types/chat";
 
@@ -15,11 +15,13 @@ const SUGGESTED_PROMPTS = [
 type UseChatOptions = {
   onAfterReply?: (messages: ChatMessage[], sessionId?: string) => string | void;
   onBeforeSend?: () => boolean;
+  /** Called when the server refuses a question because the free limit is used up. */
+  onLimitReached?: () => void;
   sessionId?: string;
 };
 
 export function useChat(options: UseChatOptions = {}) {
-  const { onAfterReply, onBeforeSend, sessionId } = options;
+  const { onAfterReply, onBeforeSend, onLimitReached, sessionId } = options;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>(
@@ -101,11 +103,16 @@ export function useChat(options: UseChatOptions = {}) {
         }
 
         if (onAfterReply) {
-          const newId = onAfterReply(finalMessages, sessionRef.current);
+          const newId = onAfterReply(
+            finalMessages,
+            result.conversationId ?? sessionRef.current,
+          );
           if (typeof newId === "string") sessionRef.current = newId;
         }
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
+        const limitReached = err instanceof ChatRequestError && err.status === 402;
+        if (limitReached) onLimitReached?.();
         const message =
           err instanceof Error ? err.message : "Something went wrong.";
         setMessages((prev) =>
@@ -113,7 +120,9 @@ export function useChat(options: UseChatOptions = {}) {
             m.id === assistantId
               ? {
                   ...m,
-                  content: `I couldn't reach the analysis service.\n\n${message}`,
+                  content: limitReached
+                    ? message
+                    : `I couldn't reach the analysis service.\n\n${message}`,
                   status: "error",
                 }
               : m,
@@ -126,7 +135,7 @@ export function useChat(options: UseChatOptions = {}) {
         }
       }
     },
-    [conversationId, isLoading, messages, onAfterReply, onBeforeSend],
+    [conversationId, isLoading, messages, onAfterReply, onBeforeSend, onLimitReached],
   );
 
   const stopGenerating = useCallback(() => {

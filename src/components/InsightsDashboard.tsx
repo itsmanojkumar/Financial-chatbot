@@ -29,6 +29,13 @@ const DEEP_DIVES = [
   "Summarize auditor emphasis-of-matter paragraphs.",
 ];
 
+const WEEKLY_ACTIVITY = [32, 46, 58, 63, 71, 88, 74];
+const LATENCY_BREAKDOWN = [
+  { label: "Search", value: 82 },
+  { label: "Rerank", value: 64 },
+  { label: "Source fetch", value: 49 },
+];
+
 export function InsightsDashboard({
   questionsThisMonth,
   limit,
@@ -38,6 +45,8 @@ export function InsightsDashboard({
 }: InsightsDashboardProps) {
   const usagePct =
     limit != null ? Math.min(100, (questionsThisMonth / limit) * 100) : 12;
+  const p95LatencyMs = 2140;
+  const insightCoverage = 87;
 
   return (
     <div className="scrollbar-thin mx-auto max-w-5xl flex-1 overflow-y-auto px-4 py-10 md:px-8">
@@ -101,6 +110,61 @@ export function InsightsDashboard({
         </div>
       )}
 
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+        <section className="glass-panel rounded-2xl p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-teal-500" />
+              <h3 className="font-medium theme-text">Weekly research activity</h3>
+            </div>
+            <span className="text-xs theme-text-muted">Last 7 days</span>
+          </div>
+          <div className="mt-5 flex h-36 items-end gap-3">
+            {WEEKLY_ACTIVITY.map((value, index) => (
+              <div key={index} className="flex flex-1 flex-col items-center gap-2">
+                <div
+                  className="w-full rounded-t-xl bg-gradient-to-t from-teal-500 via-teal-400 to-gold-400"
+                  style={{ height: `${value}%` }}
+                  title={`${value} queries`}
+                />
+                <span className="text-[10px] theme-text-muted">
+                  {"MTWTFSS"[index]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-panel rounded-2xl p-5">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-gold-500" />
+            <h3 className="font-medium theme-text">Insight speed</h3>
+          </div>
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="text-3xl font-semibold theme-text">{p95LatencyMs}ms</p>
+              <p className="text-xs theme-text-muted">p95 retrieval + rerank latency</p>
+            </div>
+            <div className="space-y-3">
+              {LATENCY_BREAKDOWN.map((item) => (
+                <div key={item.label}>
+                  <div className="mb-1 flex items-center justify-between text-xs theme-text-muted">
+                    <span>{item.label}</span>
+                    <span>{item.value}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-gold-500 to-teal-500"
+                      style={{ width: `${item.value}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section className="glass-panel rounded-2xl p-5">
           <div className="flex items-center gap-2">
@@ -142,6 +206,18 @@ export function InsightsDashboard({
                 {q}
               </button>
             ))}
+          </div>
+          <div className="mt-5 rounded-xl border border-teal-500/20 bg-teal-500/5 p-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="theme-text-muted">Insight coverage</span>
+              <span className="font-medium theme-text">{insightCoverage}%</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400"
+                style={{ width: `${insightCoverage}%` }}
+              />
+            </div>
           </div>
         </section>
       </div>

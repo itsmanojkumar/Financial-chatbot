@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { Background } from "./components/Background";
 import { ChatInput } from "./components/ChatInput";
 import { CommandPalette } from "./components/CommandPalette";
@@ -20,19 +21,33 @@ import { useChat } from "./hooks/useChat";
 import { useConversations } from "./hooks/useConversations";
 import { useSavedPrompts } from "./hooks/useSavedPrompts";
 import { useSettings } from "./hooks/useSettings";
+import { useAccount } from "./hooks/useAccount";
 import { useUsage } from "./hooks/useUsage";
+import { buyProPlan } from "./lib/checkout";
 import { downloadText, messagesToMarkdown } from "./lib/exportChat";
-import type { AppView } from "./types/app";
+import type { AppView, UserPlan } from "./types/app";
 
 const PLAN_LABELS = { free: "Free", pro: "Pro", team: "Team" } as const;
 
 export default function App() {
+  const { data: session, status: sessionStatus } = useSession();
   const { resolved, setMode, toggle } = useTheme();
-  const { settings, patch, setPlan } = useSettings();
-  const { usage, remaining, canAsk, recordQuestion, limit } = useUsage(
-    settings.plan,
+  const { settings, patch } = useSettings();
+  const { account, setAccount, refresh: refreshAccount, countQuestion } = useAccount(
+    session?.user?.id,
   );
-  const conversations = useConversations();
+  // The plan comes from the backend; nobody becomes Pro without paying.
+  const plan: UserPlan = account?.plan ?? "free";
+  const localUsage = useUsage("free");
+  const usage = localUsage.usage;
+  const recordQuestion = localUsage.recordQuestion;
+  // Signed-in users with an account are counted by the backend; everyone
+  // else falls back to the count kept in this browser.
+  const limit = account ? account.questionLimit : localUsage.limit;
+  const questionsThisMonth = account ? account.questionsUsed : usage.questions;
+  const remaining = limit == null ? null : Math.max(0, limit - questionsThisMonth);
+  const canAsk = limit == null || questionsThisMonth < limit;
+  const conversations = useConversations(session?.user?.id);
   const savedPrompts = useSavedPrompts();
 
   const [view, setView] = useState<AppView>("chat");
@@ -59,8 +74,22 @@ export default function App() {
       return false;
     }
     recordQuestion();
+    countQuestion();
     return true;
-  }, [canAsk, recordQuestion]);
+  }, [canAsk, recordQuestion, countQuestion]);
+
+  const onLimitReached = useCallback(() => {
+    setLimitToast(true);
+    setView("pricing");
+    void refreshAccount();
+  }, [refreshAccount]);
+
+  const upgradeToPro = useCallback(async () => {
+    const upgraded = await buyProPlan(session?.user ?? {});
+    if (!upgraded) return false;
+    setAccount(upgraded);
+    return true;
+  }, [session?.user, setAccount]);
 
   const {
     messages,
@@ -77,6 +106,7 @@ export default function App() {
     sessionId: conversations.activeId,
     onAfterReply,
     onBeforeSend,
+    onLimitReached,
   });
 
   useEffect(() => {
@@ -104,8 +134,8 @@ export default function App() {
   }, [clearChat, conversations]);
 
   const handleSelectConversation = useCallback(
-    (id: string) => {
-      const loaded = conversations.loadMessages(id);
+    async (id: string) => {
+      const loaded = await conversations.loadMessages(id);
       conversations.setActiveId(id);
       loadSession(id, loaded);
       setView("chat");
@@ -176,7 +206,11 @@ export default function App() {
             }}
             resolvedTheme={resolved}
             onOpenMobileNav={() => setMobileNav(true)}
-            planLabel={PLAN_LABELS[settings.plan]}
+            planLabel={PLAN_LABELS[plan]}
+            user={session?.user}
+            authLoading={sessionStatus === "loading"}
+            onSignIn={() => void signIn("google", { redirectTo: "/workspace" })}
+            onSignOut={() => void signOut({ redirectTo: "/signin" })}
           />
           {view === "chat" && settings.showInsightsStrip && (
             <InsightsStrip
@@ -215,14 +249,17 @@ export default function App() {
             )}
             {view === "pricing" && (
               <PricingPage
-                currentPlan={settings.plan}
-                onSelectPlan={setPlan}
+                currentPlan={plan}
+                paidUntil={account?.paidUntil}
+                signedIn={Boolean(session?.user)}
+                onUpgrade={upgradeToPro}
+                onSignIn={() => void signIn("google", { redirectTo: "/workspace" })}
                 onStartChat={() => setView("chat")}
               />
             )}
             {view === "insights" && (
               <InsightsDashboard
-                questionsThisMonth={usage.questions}
+                questionsThisMonth={questionsThisMonth}
                 limit={limit}
                 streakDays={usage.streakDays}
                 conversationsCount={conversations.conversations.length}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { PRICING_TIERS } from "../data/pricing";
@@ -5,15 +6,46 @@ import type { UserPlan } from "../types/app";
 
 type PricingPageProps = {
   currentPlan: UserPlan;
-  onSelectPlan: (plan: UserPlan) => void;
+  /** When Pro ends, in milliseconds since the epoch. */
+  paidUntil?: number | null;
+  signedIn: boolean;
+  /** Runs checkout; resolves true once the account is on Pro. */
+  onUpgrade: () => Promise<boolean>;
+  onSignIn: () => void;
   onStartChat: () => void;
 };
 
 export function PricingPage({
   currentPlan,
-  onSelectPlan,
+  paidUntil,
+  signedIn,
+  onUpgrade,
+  onSignIn,
   onStartChat,
 }: PricingPageProps) {
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const upgrade = async () => {
+    setNotice(null);
+    setCheckingOut(true);
+    try {
+      if (await onUpgrade()) onStartChat();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Checkout failed. Please try again.");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  const ctaLabel = (tierId: string, isCurrent: boolean) => {
+    if (isCurrent) return "Current plan";
+    if (tierId === "free" && currentPlan === "pro") return "Included in Pro";
+    if (tierId === "pro" && !signedIn) return "Sign in to upgrade";
+    if (tierId === "pro" && checkingOut) return "Opening checkout…";
+    return PRICING_TIERS.find((tier) => tier.id === tierId)?.cta ?? "";
+  };
+
   return (
     <div className="scrollbar-thin mx-auto max-w-6xl flex-1 overflow-y-auto px-4 py-10 md:px-8 md:py-14">
       <div className="text-center">
@@ -79,13 +111,22 @@ export function PricingPage({
               </ul>
               <button
                 type="button"
-                disabled={isCurrent}
+                disabled={
+                  isCurrent ||
+                  (tier.id === "free" && currentPlan === "pro") ||
+                  (tier.id === "pro" && checkingOut)
+                }
                 onClick={() => {
-                  if (tier.id === "enterprise") return;
-                  if (tier.id === "free" || tier.id === "pro" || tier.id === "team") {
-                    onSelectPlan(tier.id);
+                  if (tier.id === "free") {
+                    onStartChat();
+                  } else if (tier.id === "pro") {
+                    if (signedIn) void upgrade();
+                    else onSignIn();
+                  } else {
+                    setNotice(
+                      `${tier.name} plans are set up directly with our team and are not sold online yet. Pro Analyst is available now.`,
+                    );
                   }
-                  if (tier.id === "pro") onStartChat();
                 }}
                 className={`mt-6 w-full rounded-xl py-2.5 text-sm font-medium transition ${
                   isCurrent
@@ -95,12 +136,31 @@ export function PricingPage({
                       : "theme-btn-secondary"
                 }`}
               >
-                {isCurrent ? "Current plan" : tier.cta}
+                {ctaLabel(tier.id, isCurrent)}
               </button>
+              {isCurrent && tier.id === "pro" && paidUntil && (
+                <p className="mt-2 text-center text-xs theme-text-muted">
+                  Active until{" "}
+                  {new Date(paidUntil).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </motion.article>
           );
         })}
       </div>
+
+      {notice && (
+        <p
+          role="status"
+          className="mx-auto mt-8 max-w-xl rounded-xl border theme-border px-4 py-3 text-center text-sm theme-text"
+        >
+          {notice}
+        </p>
+      )}
 
       <p className="mt-10 text-center text-xs theme-text-muted">
         All plans include encrypted transit, citation-backed answers, and

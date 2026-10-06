@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, BarChart3, BookOpen } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { ArrowUpRight, BarChart3, BookOpen, LogIn, LogOut } from "lucide-react";
 
 type MarketSiteHeaderProps = {
   active?: "overview" | "us" | "india";
@@ -14,6 +15,10 @@ const items = [
 ] as const;
 
 export function MarketSiteHeader({ active = "overview" }: MarketSiteHeaderProps) {
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const initial = (user?.name || user?.email || "?").trim().charAt(0).toUpperCase();
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-7">
       <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4">
@@ -45,16 +50,46 @@ export function MarketSiteHeader({ active = "overview" }: MarketSiteHeaderProps)
           ))}
         </nav>
 
-        <Link
-          href="/workspace"
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-3.5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:px-4 sm:text-[13px]"
-        >
-          <BarChart3 className="h-4 w-4 text-teal-300" />
-          <span className="hidden md:inline">Research workspace</span>
-          <span className="hidden sm:inline md:hidden">Workspace</span>
-          <span className="sm:hidden">App</span>
-          <ArrowUpRight className="hidden h-3.5 w-3.5 text-slate-400 sm:block" />
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          {status === "authenticated" && user ? (
+            <div className="flex items-center gap-1.5">
+              <span
+                className="grid h-8 w-8 place-items-center rounded-full bg-teal-600 text-xs font-semibold text-white"
+                title={user.email ?? undefined}
+                aria-hidden="true"
+              >
+                {initial}
+              </span>
+              <button
+                type="button"
+                onClick={() => void signOut({ redirectTo: "/" })}
+                className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 sm:px-3"
+                aria-label={`Sign out${user.email ? ` ${user.email}` : ""}`}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </div>
+          ) : status === "unauthenticated" ? (
+            <Link
+              href="/signin"
+              className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 sm:px-3"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Sign in</span>
+            </Link>
+          ) : null}
+          <Link
+            href="/workspace"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3.5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:px-4 sm:text-[13px]"
+          >
+            <BarChart3 className="h-4 w-4 text-teal-300" />
+            <span className="hidden md:inline">Research workspace</span>
+            <span className="hidden sm:inline md:hidden">Workspace</span>
+            <span className="sm:hidden">App</span>
+            <ArrowUpRight className="hidden h-3.5 w-3.5 text-slate-400 sm:block" />
+          </Link>
+        </div>
       </div>
     </header>
   );

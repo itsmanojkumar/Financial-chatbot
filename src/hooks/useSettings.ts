@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { loadJson, saveJson } from "../lib/storage";
-import type { AppSettings, UserPlan } from "../types/app";
+import type { AppSettings } from "../types/app";
 
 const STORAGE_KEY = "ledgermind_settings";
 
@@ -8,7 +8,6 @@ const DEFAULT: AppSettings = {
   theme: "light",
   compactChat: false,
   showInsightsStrip: true,
-  plan: "free",
 };
 
 export function useSettings() {
@@ -24,10 +23,5 @@ export function useSettings() {
     });
   }, []);
 
-  const setPlan = useCallback(
-    (plan: UserPlan) => patch({ plan }),
-    [patch],
-  );
-
-  return { settings, patch, setPlan };
+  return { settings, patch };
 }

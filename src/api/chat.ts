@@ -49,6 +49,26 @@ function demoReply(message: string): ChatResponse {
   };
 }
 
+/** Error from the chat API, keeping the HTTP status (402 means the free limit is used up). */
+export class ChatRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ChatRequestError";
+  }
+}
+
+async function chatRequestError(res: Response): Promise<ChatRequestError> {
+  const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+  const message =
+    typeof body?.error === "string"
+      ? body.error
+      : `Request failed (${res.status}). Is your RAG API running?`;
+  return new ChatRequestError(message, res.status);
+}
+
 export async function sendChatMessage(
   payload: ChatRequest,
   signal?: AbortSignal,
@@ -67,12 +87,7 @@ export async function sendChatMessage(
     signal,
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      text || `Request failed (${res.status}). Is your RAG API running?`,
-    );
-  }
+  if (!res.ok) throw await chatRequestError(res);
 
   const data = (await res.json()) as ChatResponse & { answer?: string };
   return {
@@ -111,6 +126,9 @@ export async function streamChatMessage(
     signal,
   });
 
+  // A refused request (limit reached, bad input) fails the same way without
+  // streaming, so only fall back for server-side failures.
+  if (res.status >= 400 && res.status < 500) throw await chatRequestError(res);
   if (!res.ok) {
     return sendChatMessage(payload, signal);
   }

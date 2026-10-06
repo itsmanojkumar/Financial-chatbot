@@ -16,7 +16,6 @@ export type AppSettings = {
   theme: ThemeMode;
   compactChat: boolean;
   showInsightsStrip: boolean;
-  plan: UserPlan;
 };
 
 export type SavedPrompt = {

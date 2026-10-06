@@ -15,7 +15,7 @@ export const PRICING_TIERS: PricingTier[] = [
   {
     id: "free",
     name: "Starter",
-    price: "$0",
+    price: "₹0",
     period: "forever",
     description: "Explore annual reports with core Q&A and citations.",
     cta: "Current plan",
@@ -30,7 +30,7 @@ export const PRICING_TIERS: PricingTier[] = [
   {
     id: "pro",
     name: "Pro Analyst",
-    price: "$29",
+    price: "₹2,499",
     period: "/ month",
     description: "For investors and analysts who live in filings.",
     highlighted: true,
@@ -47,7 +47,7 @@ export const PRICING_TIERS: PricingTier[] = [
   {
     id: "team",
     name: "Team",
-    price: "$99",
+    price: "₹8,499",
     period: "/ seat / mo",
     description: "Shared workspace for research desks and IR teams.",
     cta: "Contact sales",

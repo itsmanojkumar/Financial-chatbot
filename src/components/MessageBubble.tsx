@@ -63,7 +63,17 @@ export function MessageBubble({
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
             <div className="prose-theme">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  // Financial statements are wider than the bubble; scroll them sideways.
+                  table: ({ node: _node, ...props }) => (
+                    <div className="scrollbar-thin -mx-1 overflow-x-auto px-1">
+                      <table {...props} />
+                    </div>
+                  ),
+                }}
+              >
                 {message.content || (isStreaming ? "…" : "")}
               </ReactMarkdown>
               {isStreaming && (
