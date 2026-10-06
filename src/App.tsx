@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Background } from "./components/Background";
+import { BatchUpload } from "./components/BatchUpload";
 import { ChatInput } from "./components/ChatInput";
 import { CommandPalette } from "./components/CommandPalette";
 import { Header } from "./components/Header";
@@ -303,6 +304,7 @@ export default function App() {
           setView("pricing");
         }}
       />
+      {session?.user && <BatchUpload />}
     </div>
   );
 }
