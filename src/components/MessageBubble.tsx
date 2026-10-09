@@ -63,6 +63,16 @@ export function MessageBubble({
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
             <div className="prose-theme">
+              {isStreaming && !message.content && (
+                <div className="flex items-center gap-2.5 py-0.5 text-sm theme-text-muted" role="status">
+                  <span className="flex gap-1" aria-hidden>
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal-400 [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal-400 [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal-400" />
+                  </span>
+                  {message.progress ?? "Thinking…"}
+                </div>
+              )}
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -74,9 +84,9 @@ export function MessageBubble({
                   ),
                 }}
               >
-                {message.content || (isStreaming ? "…" : "")}
+                {message.content}
               </ReactMarkdown>
-              {isStreaming && (
+              {isStreaming && message.content && (
                 <span className="ml-0.5 inline-block h-4 w-1 animate-pulse rounded-full bg-teal-400/80 align-middle" />
               )}
             </div>

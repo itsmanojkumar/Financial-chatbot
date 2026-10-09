@@ -102,6 +102,7 @@ export async function streamChatMessage(
   payload: ChatRequest,
   onToken: (chunk: string) => void,
   signal?: AbortSignal,
+  onStatus?: (status: string) => void,
 ): Promise<ChatResponse> {
   if (USE_DEMO) {
     const full = demoReply(payload.message);
@@ -150,26 +151,32 @@ export async function streamChatMessage(
 
   const consumeData = (data: string) => {
     if (!data || data === "[DONE]") return;
+    let parsed: {
+      token?: string;
+      delta?: string;
+      reply?: string;
+      answer?: string;
+      status?: string;
+      error?: string;
+      conversationId?: string;
+      sources?: ChatResponse["sources"];
+    };
     try {
-      const parsed = JSON.parse(data) as {
-        token?: string;
-        delta?: string;
-        reply?: string;
-        answer?: string;
-        conversationId?: string;
-        sources?: ChatResponse["sources"];
-      };
-      const chunk = parsed.token ?? parsed.delta ?? parsed.reply ?? parsed.answer;
-      if (chunk) {
-        fullText += chunk;
-        onToken(chunk);
-      }
-      responseConversationId = parsed.conversationId ?? responseConversationId;
-      sources = parsed.sources ?? sources;
+      parsed = JSON.parse(data);
     } catch {
       fullText += data;
       onToken(data);
+      return;
     }
+    if (parsed.status) onStatus?.(parsed.status);
+    if (parsed.error) throw new ChatRequestError(parsed.error, 500);
+    const chunk = parsed.token ?? parsed.delta ?? parsed.reply ?? parsed.answer;
+    if (chunk) {
+      fullText += chunk;
+      onToken(chunk);
+    }
+    responseConversationId = parsed.conversationId ?? responseConversationId;
+    sources = parsed.sources ?? sources;
   };
 
   const consumeEvent = (event: string) => {

@@ -80,6 +80,11 @@ export function useChat(options: UseChatOptions = {}) {
             );
           },
           controller.signal,
+          (progress) => {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, progress } : m)),
+            );
+          },
         );
 
         if (result.conversationId) {

@@ -15,6 +15,8 @@ export type ChatMessage = {
   sources?: SourceCitation[];
   createdAt: number;
   status?: "streaming" | "done" | "error";
+  /** Live progress text from the server while the answer is being prepared. */
+  progress?: string;
 };
 
 export type ChatRequest = {
