@@ -41,18 +41,36 @@ export function useStreamingChat() {
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
+      let buffer = ''; // Handle partial lines across chunks
 
       while (true) {
         const { done, value } = await reader!.read();
-        if (done) break;
+        if (done) {
+          // Process remaining buffer
+          if (buffer.trim()) {
+            try {
+              const json = JSON.parse(buffer);
+              if (json.token) {
+                setResponse(prev => prev + json.token);
+                tokenCount++;
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+          break;
+        }
 
         // Record first token time
         if (firstTokenTime === undefined) {
           firstTokenTime = performance.now();
         }
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value);
+        const lines = buffer.split('\n');
+
+        // Keep last incomplete line in buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.trim()) {
