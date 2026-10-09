@@ -103,9 +103,8 @@ export function useChat(options: UseChatOptions = {}) {
         ];
         setMessages(finalMessages);
 
-        if (result.sources?.length) {
-          setActiveSources(result.sources);
-        }
+        // Clear rather than keep the previous answer's sources, which would look like citations.
+        setActiveSources(result.sources?.length ? result.sources : null);
 
         if (onAfterReply) {
           const newId = onAfterReply(
