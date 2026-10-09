@@ -28,14 +28,33 @@ export default function ChatWithStreaming({ reportIds }: ChatWithStreamingProps)
         </div>
       )}
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex gap-1">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+          <span className="text-sm text-blue-600 font-medium">Streaming response...</span>
+        </div>
+      )}
+
       {/* Response Container */}
       <div className="relative">
         <div className="p-4 bg-gray-50 rounded-lg min-h-24 max-h-96 overflow-y-auto border border-gray-200">
           {response ? (
-            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-              {response}
-              {loading && <span className="animate-pulse ml-1">▌</span>}
-            </p>
+            <div className="text-gray-800 leading-relaxed">
+              {/* Format response as readable text with paragraphs */}
+              {response.split('\n\n').map((paragraph, idx) => (
+                <p key={idx} className="mb-3 last:mb-0">
+                  {paragraph.trim()}
+                </p>
+              ))}
+              {loading && (
+                <span className="inline-block animate-pulse ml-1 text-gray-400">●</span>
+              )}
+            </div>
           ) : (
             <p className="text-gray-400 italic">
               {loading ? 'Waiting for response...' : 'Response will appear here'}
@@ -44,26 +63,34 @@ export default function ChatWithStreaming({ reportIds }: ChatWithStreamingProps)
         </div>
       </div>
 
-      {/* Latency Metrics */}
-      {metrics && (
-        <div className="grid grid-cols-2 gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm">
-          <div>
-            <span className="text-gray-600">Total Latency:</span>
-            <p className="font-mono font-bold text-blue-600">{metrics.totalLatency}ms</p>
-          </div>
-          <div>
-            <span className="text-gray-600">Time to First Token:</span>
-            <p className="font-mono font-bold text-blue-600">{metrics.ttft}ms</p>
-          </div>
-          <div>
-            <span className="text-gray-600">Speed:</span>
-            <p className="font-mono font-bold text-blue-600">
-              {metrics.tokensPerSecond} tokens/s
-            </p>
-          </div>
-          <div>
-            <span className="text-gray-600">Tokens Generated:</span>
-            <p className="font-mono font-bold text-blue-600">{metrics.tokenCount}</p>
+      {/* Live Token Count During Streaming */}
+      {(loading || metrics) && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-gray-600 block text-xs mb-1">Tokens</span>
+              <p className="font-mono font-bold text-emerald-600 text-lg">
+                {metrics?.tokenCount || 0}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-600 block text-xs mb-1">Speed</span>
+              <p className="font-mono font-bold text-emerald-600 text-lg">
+                {metrics?.tokensPerSecond ? `${metrics.tokensPerSecond} tok/s` : '-'}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-600 block text-xs mb-1">TTFT</span>
+              <p className="font-mono font-bold text-emerald-600">
+                {metrics?.ttft ? `${metrics.ttft}ms` : '-'}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-600 block text-xs mb-1">Total</span>
+              <p className="font-mono font-bold text-emerald-600">
+                {metrics?.totalLatency ? `${metrics.totalLatency}ms` : '-'}
+              </p>
+            </div>
           </div>
         </div>
       )}
