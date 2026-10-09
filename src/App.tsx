@@ -178,9 +178,9 @@ export default function App() {
   }, [handleNewChat]);
 
   return (
-    <div className="relative flex min-h-screen flex-col theme-bg">
+    <div className="relative flex h-dvh flex-col overflow-hidden theme-bg">
       <Background />
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 flex-1 flex-col md:flex-row">
         <Sidebar
           conversations={conversations.conversations}
           activeConversationId={conversations.activeId}
@@ -192,7 +192,7 @@ export default function App() {
           mobileOpen={mobileNav}
           onCloseMobile={() => setMobileNav(false)}
         />
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <Header
             view={view}
             onNavigate={setView}

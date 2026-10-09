@@ -48,10 +48,10 @@ export function MessageBubble({
         )}
       </div>
       <div
-        className={`max-w-[min(100%,42rem)] ${isUser ? "text-right" : "text-left"}`}
+        className={`min-w-0 max-w-[42rem] ${isUser ? "text-right" : "text-left"}`}
       >
         <div
-          className={`inline-block rounded-2xl px-4 text-left leading-relaxed theme-text ${
+          className={`inline-block max-w-full rounded-2xl px-4 text-left leading-relaxed theme-text ${
             compact ? "py-2 text-sm" : "py-3 text-[15px]"
           } ${
             isUser
